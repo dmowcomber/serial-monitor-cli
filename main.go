@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,12 +11,17 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("expected device argument: go run serial_monitor.go /dev/the-device")
-	}
-	device := os.Args[1]
+	var device string
+	var baud int
+	flag.StringVar(&device, "device", "", "the device to listen to. Example: /dev/tty.usbserial. REQUIRED")
+	flag.IntVar(&baud, "baud", 9600, "the baud of the serial connection")
+	flag.Parse()
 
-	serialConfig := &serial.Config{Name: device, Baud: 9600}
+	if device == "" {
+		log.Fatal("expected device argument: go run main.go -device=/dev/the-device -baud=9600")
+	}
+
+	serialConfig := &serial.Config{Name: device, Baud: baud}
 	serialPort, err := serial.OpenPort(serialConfig)
 	if err != nil {
 		log.Printf("err: %s", err.Error())
