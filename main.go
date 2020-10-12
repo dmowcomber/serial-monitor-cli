@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/tarm/serial"
 )
@@ -22,19 +21,33 @@ func main() {
 	}
 
 	serialConfig := &serial.Config{Name: device, Baud: baud}
+	retryReadSerial(serialConfig)
+}
+
+func retryReadSerial(serialConfig *serial.Config) {
+	var lastErr error
+	for {
+		err := readSerial(serialConfig)
+		if lastErr == nil || err.Error() != lastErr.Error() {
+			log.Println(err.Error())
+			log.Println("attemtping again...")
+		}
+		lastErr = err
+	}
+}
+
+func readSerial(serialConfig *serial.Config) error {
 	serialPort, err := serial.OpenPort(serialConfig)
 	if err != nil {
-		log.Printf("err: %s", err.Error())
-		os.Exit(1)
+		return fmt.Errorf("failed to open serial port: %s", err.Error())
 	}
 
 	br := bufio.NewReader(serialPort)
-
 	for {
 		line, _, err := br.ReadLine()
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to read: %s", err.Error())
 		}
-		fmt.Println(string(line))
+		log.Println(string(line))
 	}
 }
